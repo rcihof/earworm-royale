@@ -33,10 +33,10 @@ export default function Dashboard({ user, onLogout }) {
   const handleCreateGame = async (e) => {
     e.preventDefault();
     try {
-      await api.createGame(songTitle, artist, opponentEmail); // ADD opponentEmail HERE
+      await api.createGame(songTitle, artist, opponentEmail);
       setSongTitle('');
       setArtist('');
-      setOpponentEmail(''); // ADD THIS LINE
+      setOpponentEmail('');
       setShowCreateGame(false);
       loadData();
     } catch (err) {
@@ -138,7 +138,17 @@ export default function Dashboard({ user, onLogout }) {
           </div>
         )}
 
-{/* Create Game Form */}
+        {/* Create Game Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowCreateGame(!showCreateGame)}
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700"
+          >
+            {showCreateGame ? 'Cancel' : '+ Create New Game'}
+          </button>
+        </div>
+
+        {/* Create Game Form */}
         {showCreateGame && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Create New Game</h2>
@@ -281,6 +291,7 @@ export default function Dashboard({ user, onLogout }) {
             </div>
           </div>
         </div>
+      </div>
 
       {/* Game Detail Modal */}
       {selectedGame && (
@@ -292,7 +303,7 @@ export default function Dashboard({ user, onLogout }) {
           onHint={handleRequestHint}
           onSolve={handleSolveGame}
         />
-    )}
+      )}
     </div>
   );
 }
