@@ -3,19 +3,30 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import authRoutes from './routes/auth.js';
 import gamesRoutes from './routes/games.js';
 import statsRoutes from './routes/stats.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Load environment variables
 dotenv.config();
 
 // Initialize database if it doesn't exist
-const dbPath = './database.sqlite';
+const dbPath = join(__dirname, '../database.sqlite');
 if (!existsSync(dbPath)) {
-  console.log('🔧 Initializing database...');
-  execSync('node src/db/init.js');
-  console.log('✅ Database initialized!');
+  console.log('🔧 Database does not exist. Initializing...');
+  try {
+    execSync('node src/db/init.js', { cwd: join(__dirname, '..'), stdio: 'inherit' });
+    console.log('✅ Database initialized successfully!');
+  } catch (err) {
+    console.error('❌ Failed to initialize database:', err);
+  }
+} else {
+  console.log('✅ Database already exists');
 }
 
 const app = express();
