@@ -193,52 +193,94 @@ export default function Dashboard({ user, onLogout }) {
           </div>
         )}
 
-        {/* Games List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Your Games</h2>
-            {games.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                No games yet. Create one to get started!
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {games.map((game) => (
-                  <div
-                    key={game.id}
-                    onClick={() => openGame(game)}
-                    className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold">
-                          {game.creator_id === user.id ? '🎯 Your Song' : '🎵 Guess This'}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {game.creator_id === user.id
-                            ? `"${game.song_title}" by ${game.artist}`
-                            : 'Mystery Song'}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {game.guess_count} guesses • {game.hint_count} hints
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">
-                          €{game.current_prize.toFixed(2)}
+        {/* Games List - Split into two sections */}
+        <div className="space-y-6">
+          {/* Your Songs (games you created) */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6">
+              <h2 className="text-lg font-semibold mb-4">🎯 Your Songs</h2>
+              {games.filter(g => g.creator_id === user.id).length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No songs created yet. Create one above!
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {games.filter(g => g.creator_id === user.id).map((game) => (
+                    <div
+                      key={game.id}
+                      onClick={() => openGame(game)}
+                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold">
+                            "{game.song_title}" by {game.artist}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {game.guesser_name ? `vs ${game.guesser_name}` : 'No opponent assigned'}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {game.guess_count} guesses • {game.hint_count} hints
+                          </p>
                         </div>
-                        <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
-                          {game.status === 'solved' ? '✓ Solved' : 'Active'}
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-green-600">
+                            €{game.current_prize.toFixed(2)}
+                          </div>
+                          <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
+                            {game.status === 'solved' ? '✓ Solved' : 'Active'}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Games to Guess (where you're the guesser) */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6">
+              <h2 className="text-lg font-semibold mb-4">🎵 Games to Guess</h2>
+              {games.filter(g => g.guesser_id === user.id).length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No one has challenged you yet!
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {games.filter(g => g.guesser_id === user.id).map((game) => (
+                    <div
+                      key={game.id}
+                      onClick={() => openGame(game)}
+                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold">Mystery Song</h3>
+                          <p className="text-sm text-gray-600">
+                            by {game.creator_name}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {game.guess_count} guesses • {game.hint_count} hints
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-green-600">
+                            €{game.current_prize.toFixed(2)}
+                          </div>
+                          <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
+                            {game.status === 'solved' ? '✓ Solved' : 'Active'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Game Detail Modal */}
       {selectedGame && (
@@ -252,8 +294,6 @@ export default function Dashboard({ user, onLogout }) {
         />
       )}
     </div>
-  );
-}
 
 // Game Detail Modal Component
 function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
