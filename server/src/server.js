@@ -1,12 +1,22 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 import authRoutes from './routes/auth.js';
 import gamesRoutes from './routes/games.js';
 import statsRoutes from './routes/stats.js';
 
 // Load environment variables
 dotenv.config();
+
+// Initialize database if it doesn't exist
+const dbPath = './database.sqlite';
+if (!existsSync(dbPath)) {
+  console.log('🔧 Initializing database...');
+  execSync('node src/db/init.js');
+  console.log('✅ Database initialized!');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
