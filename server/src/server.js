@@ -5,6 +5,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import Database from 'better-sqlite3';
 import authRoutes from './routes/auth.js';
 import gamesRoutes from './routes/games.js';
 import statsRoutes from './routes/stats.js';
@@ -15,18 +16,34 @@ const __dirname = dirname(__filename);
 // Load environment variables
 dotenv.config();
 
-// Initialize database if it doesn't exist
+// Initialize database if tables don't exist
 const dbPath = join(__dirname, '../database.sqlite');
+let needsInit = false;
+
 if (!existsSync(dbPath)) {
-  console.log('🔧 Database does not exist. Initializing...');
+  console.log('🔧 Database file does not exist. Will create and initialize...');
+  needsInit = true;
+} else {
+  // Check if tables exist
+  const db = new Database(dbPath);
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").all();
+  db.close();
+  
+  if (tables.length === 0) {
+    console.log('🔧 Database exists but has no tables. Reinitializing...');
+    needsInit = true;
+  } else {
+    console.log('✅ Database already initialized');
+  }
+}
+
+if (needsInit) {
   try {
     execSync('node src/db/init.js', { cwd: join(__dirname, '..'), stdio: 'inherit' });
     console.log('✅ Database initialized successfully!');
   } catch (err) {
     console.error('❌ Failed to initialize database:', err);
   }
-} else {
-  console.log('✅ Database already exists');
 }
 
 const app = express();
