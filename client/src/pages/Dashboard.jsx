@@ -7,6 +7,7 @@ export default function Dashboard({ user, onLogout }) {
   const [showCreateGame, setShowCreateGame] = useState(false);
   const [songTitle, setSongTitle] = useState('');
   const [artist, setArtist] = useState('');
+  const [opponentEmail, setOpponentEmail] = useState('');
   const [selectedGame, setSelectedGame] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,9 +33,10 @@ export default function Dashboard({ user, onLogout }) {
   const handleCreateGame = async (e) => {
     e.preventDefault();
     try {
-      await api.createGame(songTitle, artist);
+      await api.createGame(songTitle, artist, opponentEmail); // ADD opponentEmail HERE
       setSongTitle('');
       setArtist('');
+      setOpponentEmail(''); // ADD THIS LINE
       setShowCreateGame(false);
       loadData();
     } catch (err) {
@@ -136,17 +138,7 @@ export default function Dashboard({ user, onLogout }) {
           </div>
         )}
 
-        {/* Create Game Button */}
-        <div className="mb-6">
-          <button
-            onClick={() => setShowCreateGame(!showCreateGame)}
-            className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700"
-          >
-            {showCreateGame ? 'Cancel' : '+ Create New Game'}
-          </button>
-        </div>
-
-        {/* Create Game Form */}
+{/* Create Game Form */}
         {showCreateGame && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Create New Game</h2>
@@ -174,6 +166,22 @@ export default function Dashboard({ user, onLogout }) {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Opponent Email
+                </label>
+                <input
+                  type="email"
+                  value={opponentEmail}
+                  onChange={(e) => setOpponentEmail(e.target.value)}
+                  placeholder="friend@example.com"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Your opponent must have an account already
+                </p>
               </div>
               <button
                 type="submit"

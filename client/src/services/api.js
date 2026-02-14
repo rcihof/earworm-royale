@@ -40,10 +40,10 @@ export const api = {
   // Games
   getGames: () => apiCall('/games'),
 
-  createGame: (songTitle, artist) =>
+  createGame: (songTitle, artist, opponentEmail) =>
     apiCall('/games', {
       method: 'POST',
-      body: JSON.stringify({ songTitle, artist }),
+      body: JSON.stringify({ songTitle, artist, opponentEmail }),
     }),
 
   getGame: (id) => apiCall(`/games/${id}`),
