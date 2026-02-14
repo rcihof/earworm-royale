@@ -8,22 +8,41 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Create a new game
-router.post('/', (req, res) => {
+// Create new game
+router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { songTitle, artist } = req.body;
-    const creatorId = req.user.userId;
+    const { songTitle, artist, opponentEmail } = req.body;
+    const creatorId = req.user.id;
 
     if (!songTitle || !artist) {
       return res.status(400).json({ error: 'Song title and artist are required' });
     }
 
-    const result = db.prepare(
-      'INSERT INTO games (creator_id, song_title, artist) VALUES (?, ?, ?)'
-    ).run(creatorId, songTitle, artist);
+    // Find opponent by email
+    let guesserId = null;
+    if (opponentEmail) {
+      const opponent = db.prepare('SELECT id FROM users WHERE email = ?').get(opponentEmail);
+      if (!opponent) {
+        return res.status(400).json({ error: 'Opponent email not found. They need to register first!' });
+      }
+      if (opponent.id === creatorId) {
+        return res.status(400).json({ error: 'You cannot create a game with yourself!' });
+      }
+      guesserId = opponent.id;
+    }
 
-    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(result.lastInsertRowid);
+    const stmt = db.prepare(`
+      INSERT INTO games (creator_id, guesser_id, song_title, artist, starting_prize, current_prize, status)
+      VALUES (?, ?, ?, ?, 50.00, 50.00, 'active')
+    `);
 
-    res.json(game);
+    const result = stmt.run(creatorId, guesserId, songTitle, artist);
+
+    res.status(201).json({
+      id: result.lastInsertRowid,
+      message: 'Game created successfully',
+      opponentAssigned: !!guesserId
+    });
   } catch (error) {
     console.error('Create game error:', error);
     res.status(500).json({ error: 'Failed to create game' });
