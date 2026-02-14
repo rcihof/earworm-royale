@@ -292,8 +292,10 @@ export default function Dashboard({ user, onLogout }) {
           onHint={handleRequestHint}
           onSolve={handleSolveGame}
         />
-      )}
+    )}
     </div>
+  );
+}
 
 // Game Detail Modal Component
 function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
