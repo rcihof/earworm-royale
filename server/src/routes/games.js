@@ -9,10 +9,10 @@ router.use(authenticateToken);
 
 // Create a new game
 // Create new game
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { songTitle, artist, opponentEmail } = req.body;
-    const creatorId = req.user.id;
+    const creatorId = req.user.userId;
 
     if (!songTitle || !artist) {
       return res.status(400).json({ error: 'Song title and artist are required' });
