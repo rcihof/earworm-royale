@@ -312,6 +312,8 @@ export default function Dashboard({ user, onLogout }) {
 function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
   const [guessText, setGuessText] = useState('');
   const [hintText, setHintText] = useState('');
+  const [respondingTo, setRespondingTo] = useState(null); // {type: 'guess'|'hint', id: number}
+  const [feedback, setFeedback] = useState('');
 
   const isCreator = game.creator_id === user.id;
 
@@ -324,8 +326,53 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
 
   const handleHintSubmit = (e) => {
     e.preventDefault();
+    if (!hintText.trim()) return;
     onHint(game.id, hintText);
     setHintText('');
+  };
+
+  const handleRespondToGuess = async (guessId, isCorrect) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/games/${game.id}/guess/${guessId}/respond`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ isCorrect, feedback })
+      });
+
+      if (!response.ok) throw new Error('Failed to respond');
+
+      setRespondingTo(null);
+      setFeedback('');
+      // Reload game data
+      window.location.reload();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleRespondToHint = async (hintId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/games/${game.id}/hint/${hintId}/respond`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ hintResponse: feedback })
+      });
+
+      if (!response.ok) throw new Error('Failed to respond');
+
+      setRespondingTo(null);
+      setFeedback('');
+      // Reload game data
+      window.location.reload();
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   return (
@@ -364,11 +411,75 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
               <h3 className="font-semibold mb-2">Guesses</h3>
               <div className="space-y-2">
                 {game.guesses.map((guess) => (
-                  <div key={guess.id} className="bg-gray-50 p-3 rounded">
+                  <div key={guess.id} className={`p-3 rounded ${
+                    guess.status === 'correct' ? 'bg-green-50 border border-green-200' :
+                    guess.status === 'incorrect' ? 'bg-red-50 border border-red-200' :
+                    'bg-gray-50'
+                  }`}>
                     <div className="font-medium">{guess.guess_text}</div>
                     <div className="text-xs text-gray-500">
                       €{guess.prize_before.toFixed(2)} → €{guess.prize_after.toFixed(2)}
                     </div>
+                    
+                    {/* Status badges */}
+                    {guess.status === 'correct' && (
+                      <div className="text-sm text-green-700 mt-1">✓ Correct!</div>
+                    )}
+                    {guess.status === 'incorrect' && guess.feedback && (
+                      <div className="text-sm text-red-700 mt-1">
+                        ✗ Incorrect - {guess.feedback}
+                      </div>
+                    )}
+                    {guess.status === 'pending' && !isCreator && (
+                      <div className="text-sm text-gray-500 mt-1">⏳ Waiting for response...</div>
+                    )}
+
+                    {/* Creator response UI */}
+                    {guess.status === 'pending' && isCreator && (
+                      <div className="mt-2">
+                        {respondingTo?.type === 'guess' && respondingTo?.id === guess.id ? (
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={feedback}
+                              onChange={(e) => setFeedback(e.target.value)}
+                              placeholder="Optional feedback (e.g., 'right country, wrong artist')"
+                              className="w-full px-3 py-1 text-sm border border-gray-300 rounded"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleRespondToGuess(guess.id, true)}
+                                className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700"
+                              >
+                                ✓ Correct
+                              </button>
+                              <button
+                                onClick={() => handleRespondToGuess(guess.id, false)}
+                                className="bg-red-600 text-white px-4 py-1 rounded text-sm hover:bg-red-700"
+                              >
+                                ✗ Incorrect
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setRespondingTo(null);
+                                  setFeedback('');
+                                }}
+                                className="bg-gray-300 text-gray-700 px-4 py-1 rounded text-sm hover:bg-gray-400"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setRespondingTo({ type: 'guess', id: guess.id })}
+                            className="bg-purple-600 text-white px-4 py-1 rounded text-sm hover:bg-purple-700"
+                          >
+                            Respond
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -382,10 +493,60 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
               <div className="space-y-2">
                 {game.hints.map((hint) => (
                   <div key={hint.id} className="bg-yellow-50 p-3 rounded">
-                    <div>{hint.hint_text || 'Hint requested'}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="font-medium">Question: {hint.hint_request || 'Hint requested'}</div>
+                    {hint.hint_response && (
+                      <div className="text-sm mt-1">Answer: {hint.hint_response}</div>
+                    )}
+                    <div className="text-xs text-gray-500 mt-1">
                       €{hint.prize_before.toFixed(2)} → €{hint.prize_after.toFixed(2)}
                     </div>
+
+                    {hint.status === 'pending' && !isCreator && (
+                      <div className="text-sm text-gray-500 mt-1">⏳ Waiting for hint...</div>
+                    )}
+
+                    {/* Creator response UI for hints */}
+                    {hint.status === 'pending' && isCreator && (
+                      <div className="mt-2">
+                        {respondingTo?.type === 'hint' && respondingTo?.id === hint.id ? (
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={feedback}
+                              onChange={(e) => setFeedback(e.target.value)}
+                              placeholder="Your hint answer..."
+                              className="w-full px-3 py-1 text-sm border border-gray-300 rounded"
+                              required
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleRespondToHint(hint.id)}
+                                disabled={!feedback.trim()}
+                                className="bg-yellow-600 text-white px-4 py-1 rounded text-sm hover:bg-yellow-700 disabled:opacity-50"
+                              >
+                                Send Hint
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setRespondingTo(null);
+                                  setFeedback('');
+                                }}
+                                className="bg-gray-300 text-gray-700 px-4 py-1 rounded text-sm hover:bg-gray-400"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setRespondingTo({ type: 'hint', id: hint.id })}
+                            className="bg-yellow-600 text-white px-4 py-1 rounded text-sm hover:bg-yellow-700"
+                          >
+                            Answer Hint
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -439,15 +600,6 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
                     </div>
                   </form>
                 </>
-              )}
-
-              {isCreator && (
-                <button
-                  onClick={() => onSolve(game.id)}
-                  className="w-full bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700"
-                >
-                  Mark as Solved
-                </button>
               )}
             </div>
           )}
