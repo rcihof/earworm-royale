@@ -21,6 +21,10 @@ const dbPath = process.env.NODE_ENV === 'production'
   ? '/var/data/database.sqlite'
   : join(__dirname, '../database.sqlite');
 
+console.log('📍 Database path:', dbPath);
+
+let needsInit = false;
+
 if (!existsSync(dbPath)) {
   console.log('🔧 Database file does not exist. Will create and initialize...');
   needsInit = true;
