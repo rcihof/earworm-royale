@@ -340,6 +340,21 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
 
   const isCreator = game.creator_id === user.id;
 
+  // Format timestamp to relative time
+  const formatTime = (timestamp) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const seconds = Math.floor((now - then) / 1000);
+    
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
   const handleGuessSubmit = (e) => {
     e.preventDefault();
     if (!guessText.trim()) return;
@@ -440,8 +455,9 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
                     'bg-gray-50'
                   }`}>
                     <div className="font-medium">{guess.guess_text}</div>
-                    <div className="text-xs text-gray-500">
-                      €{guess.prize_before.toFixed(2)} → €{guess.prize_after.toFixed(2)}
+                    <div className="text-xs text-gray-500 flex justify-between">
+                      <span>€{guess.prize_before.toFixed(2)} → €{guess.prize_after.toFixed(2)}
+                      <span>{formatTime(guess.created_at)}</span>
                     </div>
                     
                     {/* Status badges */}
