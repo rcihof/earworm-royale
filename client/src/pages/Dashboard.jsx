@@ -259,9 +259,14 @@ export default function Dashboard({ user, onLogout }) {
                           <div className="text-lg font-bold text-green-600">
                             €{game.current_prize.toFixed(2)}
                           </div>
-                          <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
+                           <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
                             {game.status === 'solved' ? '✓ Solved' : 'Active'}
                           </div>
+                          {(game.guess_count > 0 || game.hint_count > 0) && game.status === 'active' && (
+                            <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mt-1 font-semibold">
+                              🔔 Action needed!
+                            </div>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -304,6 +309,11 @@ export default function Dashboard({ user, onLogout }) {
                           <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
                             {game.status === 'solved' ? '✓ Solved' : 'Active'}
                           </div>
+                          {(game.guess_count > 0 || game.hint_count > 0) && game.status === 'active' && (
+                            <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mt-1 font-semibold">
+                              🔔 Check responses!
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -357,7 +367,7 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
              date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
   };
-  
+
   const handleGuessSubmit = (e) => {
     e.preventDefault();
     if (!guessText.trim()) return;
