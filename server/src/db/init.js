@@ -4,9 +4,18 @@ import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const dbPath = join(__dirname, '../../database.sqlite');
+
+// Use persistent disk if available (production), otherwise local path (development)
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? '/var/data/database.sqlite'
+  : join(__dirname, '../../database.sqlite');
+
+console.log('📍 Database location:', dbPath);
 
 const db = new Database(dbPath);
+
+// Enable foreign keys
+db.pragma('foreign_keys = ON');
 
 // Create tables
 db.exec(`
@@ -25,10 +34,10 @@ db.exec(`
     guesser_id INTEGER,
     song_title TEXT NOT NULL,
     artist TEXT NOT NULL,
-    starting_prize REAL DEFAULT 50,
-    current_prize REAL DEFAULT 50,
+    starting_prize REAL NOT NULL,
+    current_prize REAL NOT NULL,
     status TEXT DEFAULT 'active',
-    notes TEXT DEFAULT '',
+    notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     solved_at DATETIME,
     FOREIGN KEY (creator_id) REFERENCES users(id),
@@ -59,6 +68,4 @@ db.exec(`
 `);
 
 console.log('✅ Database initialized successfully!');
-console.log('📁 Database location:', dbPath);
-
 db.close();
