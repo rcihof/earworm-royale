@@ -155,22 +155,24 @@ router.post('/:id/guess', async (req, res) => {
       return res.status(403).json({ error: 'Only the assigned guesser can make guesses' });
     }
 
-    // Calculate new prize (halve it)
+    // Check how many guesses have been made
+    const guessCount = db.prepare('SELECT COUNT(*) as count FROM guesses WHERE game_id = ?').get(gameId).count;
+
     const prizeBefore = game.current_prize;
-    const prizeAfter = prizeBefore / 2;
+    // First guess is free, subsequent guesses halve the prize
+    const prizeAfter = guessCount === 0 ? prizeBefore : prizeBefore / 2;
 
     // Insert guess
     db.prepare(
-      'INSERT INTO guesses (game_id, user_id, guess_text, prize_before, prize_after) VALUES (?, ?, ?, ?, ?)'
-    ).run(gameId, userId, guessText, prizeBefore, prizeAfter);
+      'INSERT INTO guesses (game_id, user_id, guess_text, prize_before, prize_after, status) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(gameId, userId, guessText, prizeBefore, prizeAfter, 'pending');
 
-    // Update game's current prize
-    db.prepare('UPDATE games SET current_prize = ? WHERE id = ?').run(prizeAfter, gameId);
+    // Update game's current prize if it changed
+    if (prizeAfter !== prizeBefore) {
+      db.prepare('UPDATE games SET current_prize = ? WHERE id = ?').run(prizeAfter, gameId);
+    }
 
-    // Get updated game
-    const updatedGame = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
-
-    res.json(updatedGame);
+    res.json({ message: 'Guess submitted successfully' });
   } catch (error) {
     console.error('Make guess error:', error);
     res.status(500).json({ error: 'Failed to make guess' });
@@ -206,13 +208,19 @@ router.post('/:id/guess/:guessId/respond', async (req, res) => {
       return res.status(400).json({ error: 'Guess already responded to' });
     }
 
+    // Prize already adjusted on submission, just use current
+    const newPrize = game.current_prize;
+    
     // Update guess with response
     const status = isCorrect ? 'correct' : 'incorrect';
     db.prepare(`
       UPDATE guesses 
-      SET status = ?, feedback = ?, responded_at = CURRENT_TIMESTAMP 
+      SET status = ?, feedback = ?, prize_after = ?, responded_at = CURRENT_TIMESTAMP 
       WHERE id = ?
-    `).run(status, feedback || null, guessId);
+    `).run(status, feedback || null, newPrize, guessId);
+
+    // Update game's current prize
+    db.prepare('UPDATE games SET current_prize = ? WHERE id = ?').run(newPrize, gameId);
 
     // If correct, mark game as solved and award winnings
     if (isCorrect) {
@@ -228,7 +236,7 @@ router.post('/:id/guess/:guessId/respond', async (req, res) => {
           UPDATE users 
           SET total_winnings = total_winnings + ? 
           WHERE id = ?
-        `).run(game.current_prize, game.guesser_id);
+        `).run(newPrize, game.guesser_id);
       }
     }
 
