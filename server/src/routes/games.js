@@ -175,6 +175,111 @@ router.post('/:id/guess', async (req, res) => {
   }
 });
 
+// Respond to a guess (creator only)
+router.post('/:id/guess/:guessId/respond', async (req, res) => {
+  try {
+    const gameId = req.params.id;
+    const guessId = req.params.guessId;
+    const userId = req.user.id;
+    const { isCorrect, feedback } = req.body;
+
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
+
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Only creator can respond to guesses
+    if (game.creator_id !== userId) {
+      return res.status(403).json({ error: 'Only the creator can respond to guesses' });
+    }
+
+    const guess = db.prepare('SELECT * FROM guesses WHERE id = ? AND game_id = ?').get(guessId, gameId);
+
+    if (!guess) {
+      return res.status(404).json({ error: 'Guess not found' });
+    }
+
+    if (guess.status !== 'pending') {
+      return res.status(400).json({ error: 'Guess already responded to' });
+    }
+
+    // Update guess with response
+    const status = isCorrect ? 'correct' : 'incorrect';
+    db.prepare(`
+      UPDATE guesses 
+      SET status = ?, feedback = ?, responded_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(status, feedback || null, guessId);
+
+    // If correct, mark game as solved and award winnings
+    if (isCorrect) {
+      db.prepare(`
+        UPDATE games 
+        SET status = 'solved', solved_at = CURRENT_TIMESTAMP 
+        WHERE id = ?
+      `).run(gameId);
+
+      // Award winnings to guesser
+      if (game.guesser_id) {
+        db.prepare(`
+          UPDATE users 
+          SET total_winnings = total_winnings + ? 
+          WHERE id = ?
+        `).run(game.current_prize, game.guesser_id);
+      }
+    }
+
+    res.json({ message: 'Response recorded', isCorrect });
+  } catch (error) {
+    console.error('Respond to guess error:', error);
+    res.status(500).json({ error: 'Failed to respond to guess' });
+  }
+});
+
+// Respond to a hint request (creator only)
+router.post('/:id/hint/:hintId/respond', async (req, res) => {
+  try {
+    const gameId = req.params.id;
+    const hintId = req.params.hintId;
+    const userId = req.user.id;
+    const { hintResponse } = req.body;
+
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
+
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Only creator can respond to hints
+    if (game.creator_id !== userId) {
+      return res.status(403).json({ error: 'Only the creator can respond to hints' });
+    }
+
+    const hint = db.prepare('SELECT * FROM hints WHERE id = ? AND game_id = ?').get(hintId, gameId);
+
+    if (!hint) {
+      return res.status(404).json({ error: 'Hint not found' });
+    }
+
+    if (hint.status !== 'pending') {
+      return res.status(400).json({ error: 'Hint already responded to' });
+    }
+
+    // Update hint with response
+    db.prepare(`
+      UPDATE hints 
+      SET hint_response = ?, status = 'answered', responded_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(hintResponse, hintId);
+
+    res.json({ message: 'Hint response recorded' });
+  } catch (error) {
+    console.error('Respond to hint error:', error);
+    res.status(500).json({ error: 'Failed to respond to hint' });
+  }
+});
+
 // Request a hint (immediately halves prize)
 router.post('/:id/hint', async (req, res) => {
   try {
@@ -203,16 +308,13 @@ router.post('/:id/hint', async (req, res) => {
 
     // Insert hint
     db.prepare(
-      'INSERT INTO hints (game_id, hint_text, prize_before, prize_after) VALUES (?, ?, ?, ?)'
-    ).run(gameId, hintText || null, prizeBefore, prizeAfter);
+      'INSERT INTO hints (game_id, hint_request, prize_before, prize_after, status) VALUES (?, ?, ?, ?, ?)'
+    ).run(gameId, hintText, prizeBefore, prizeAfter, 'pending');
 
     // Update game's current prize
     db.prepare('UPDATE games SET current_prize = ? WHERE id = ?').run(prizeAfter, gameId);
 
-    // Get updated game
-    const updatedGame = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
-
-    res.json(updatedGame);
+    res.json({ message: 'Hint requested successfully' });
   } catch (error) {
     console.error('Request hint error:', error);
     res.status(500).json({ error: 'Failed to request hint' });
