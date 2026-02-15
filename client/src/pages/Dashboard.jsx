@@ -331,6 +331,7 @@ export default function Dashboard({ user, onLogout }) {
 }
 
 // Game Detail Modal Component
+
 function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
   const [guessText, setGuessText] = useState('');
   const [hintText, setHintText] = useState('');
@@ -580,47 +581,72 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
             <div className="space-y-4">
               {!isCreator && (
                 <>
-                  <form onSubmit={handleGuessSubmit}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Make a Guess
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={guessText}
-                        onChange={(e) => setGuessText(e.target.value)}
-                        placeholder="Enter song title..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      />
-                      <button
-                        type="submit"
-                        className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700"
-                      >
-                        Guess
-                      </button>
-                    </div>
-                  </form>
+                  {(() => {
+                    const hasPendingGuess = game.guesses?.some(g => g.status === 'pending');
+                    const hasPendingHint = game.hints?.some(h => h.status === 'pending');
+                    
+                    return (
+                      <>
+                        {hasPendingGuess && (
+                          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded-lg text-sm text-center">
+                            ⏳ Waiting for response to your guess...
+                          </div>
+                        )}
+                        
+                        {hasPendingHint && (
+                          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded-lg text-sm text-center">
+                            ⏳ Waiting for hint response...
+                          </div>
+                        )}
 
-                  <form onSubmit={handleHintSubmit}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Request a Hint
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={hintText}
-                        onChange={(e) => setHintText(e.target.value)}
-                        placeholder="Ask for a hint..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      />
-                      <button
-                        type="submit"
-                        className="bg-yellow-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-yellow-600"
-                      >
-                        Hint
-                      </button>
-                    </div>
-                  </form>
+                        <form onSubmit={handleGuessSubmit}>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Make a Guess
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={guessText}
+                              onChange={(e) => setGuessText(e.target.value)}
+                              placeholder="Enter song title..."
+                              disabled={hasPendingGuess || hasPendingHint}
+                              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            />
+                            <button
+                              type="submit"
+                              disabled={hasPendingGuess || hasPendingHint}
+                              className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                              Guess
+                            </button>
+                          </div>
+                        </form>
+
+                        <form onSubmit={handleHintSubmit}>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Request a Hint
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={hintText}
+                              onChange={(e) => setHintText(e.target.value)}
+                              placeholder="Ask for a hint..."
+                              disabled={hasPendingGuess || hasPendingHint}
+                              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            />
+                            <button
+                              type="submit"
+                              disabled={hasPendingGuess || hasPendingHint}
+                              className="bg-yellow-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                              Hint
+                            </button>
+                          </div>
+                        </form>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
