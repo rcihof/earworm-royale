@@ -262,7 +262,7 @@ export default function Dashboard({ user, onLogout }) {
                            <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
                             {game.status === 'solved' ? '✓ Solved' : 'Active'}
                           </div>
-                          {(game.guess_count > 0 || game.hint_count > 0) && game.status === 'active' && (
+                          {(game.pending_guess_count > 0 || game.pending_hint_count > 0) && (
                             <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mt-1 font-semibold">
                               🔔 Action needed!
                             </div>
@@ -309,7 +309,7 @@ export default function Dashboard({ user, onLogout }) {
                           <div className={`text-xs ${game.status === 'solved' ? 'text-green-600' : 'text-gray-500'}`}>
                             {game.status === 'solved' ? '✓ Solved' : 'Active'}
                           </div>
-                          {(game.guess_count > 0 || game.hint_count > 0) && game.status === 'active' && (
+                          {game.status === 'active' && (game.guess_count > game.pending_guess_count || game.hint_count > game.pending_hint_count) && (
                             <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mt-1 font-semibold">
                               🔔 Check responses!
                             </div>
