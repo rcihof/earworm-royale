@@ -130,10 +130,21 @@ export default function Dashboard({ user, onLogout }) {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Pint Progress */}
+{/* Pint Progress */}
         {pintProgress && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-3">🍺 Pint Progress</h2>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold">🍺 Pint Progress</h2>
+              <button
+                onClick={() => {
+                  setLoading(true);
+                  loadData();
+                }}
+                className="text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-lg font-medium transition-colors"
+              >
+                🔄 Refresh
+              </button>
+            </div>
             <div className="w-full bg-gray-200 rounded-full h-6 mb-2">
               <div
                 className="bg-green-500 h-6 rounded-full flex items-center justify-center text-white text-sm font-semibold"
