@@ -340,19 +340,20 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
 
   const isCreator = game.creator_id === user.id;
 
-  // Format timestamp to relative time
+// Format timestamp to local time
   const formatTime = (timestamp) => {
-    const now = new Date();
-    const then = new Date(timestamp);
-    const seconds = Math.floor((now - then) / 1000);
+    const date = new Date(timestamp);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
     
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    if (isToday) {
+      // Just show time if today
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+      // Show date + time if older
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + 
+             date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
   };
 
   const handleGuessSubmit = (e) => {
