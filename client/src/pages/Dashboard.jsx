@@ -456,7 +456,7 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
                   }`}>
                     <div className="font-medium">{guess.guess_text}</div>
                     <div className="text-xs text-gray-500 flex justify-between">
-                      <span>€{guess.prize_before.toFixed(2)} → €{guess.prize_after.toFixed(2)}
+                      <span>€{guess.prize_before.toFixed(2)} → €{guess.prize_after.toFixed(2)}</span>
                       <span>{formatTime(guess.created_at)}</span>
                     </div>
                     
