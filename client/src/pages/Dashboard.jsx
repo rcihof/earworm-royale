@@ -414,6 +414,11 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
   };
 
   const handleRespondToGuess = async (guessId, isCorrect) => {
+    // Confirm before marking correct (since it ends the game)
+    if (isCorrect && !confirm('Mark this guess as CORRECT? This will end the game and award the prize.')) {
+      return;
+    }
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/games/${game.id}/guess/${guessId}/respond`, {
         method: 'POST',
