@@ -49,10 +49,10 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get all games for current user (both created and guessing)
-router.get('/', (req, res) => {
+// Get all games for user (as creator or guesser)
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const games = db.prepare(`
       SELECT 
