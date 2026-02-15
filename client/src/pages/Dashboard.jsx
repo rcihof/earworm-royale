@@ -10,6 +10,7 @@ export default function Dashboard({ user, onLogout }) {
   const [opponentEmail, setOpponentEmail] = useState('');
   const [selectedGame, setSelectedGame] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(user);
 
   useEffect(() => {
     loadData();
@@ -23,6 +24,16 @@ export default function Dashboard({ user, onLogout }) {
       ]);
       setGames(gamesData);
       setPintProgress(progressData);
+      
+      // Fetch fresh user data to update winnings
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/auth/me`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.ok) {
+        const freshUser = await response.json();
+        setCurrentUser(freshUser);
+        localStorage.setItem('user', JSON.stringify(freshUser));
+      }
     } catch (err) {
       console.error('Failed to load data:', err);
     } finally {
@@ -106,7 +117,7 @@ export default function Dashboard({ user, onLogout }) {
           <h1 className="text-2xl font-bold text-gray-900">🎵 Earworm Royale</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">
-              Hey, {user.displayName}! 💰 €{user.totalWinnings?.toFixed(2) || '0.00'}
+              Hey, {user.displayName}! 💰 €{currentUser.totalWinnings?.toFixed(2) || '0.00'}
             </span>
             <button
               onClick={onLogout}
