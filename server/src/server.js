@@ -17,8 +17,9 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 // Initialize database if tables don't exist
-const dbPath = join(__dirname, '../database.sqlite');
-let needsInit = false;
+const dbPath = process.env.NODE_ENV === 'production'
+  ? '/var/data/database.sqlite'
+  : join(__dirname, '../database.sqlite');
 
 if (!existsSync(dbPath)) {
   console.log('🔧 Database file does not exist. Will create and initialize...');
