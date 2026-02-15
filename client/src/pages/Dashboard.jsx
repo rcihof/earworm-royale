@@ -342,7 +342,9 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
 
 // Format timestamp to local time
   const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
+    // Append 'Z' to indicate UTC if not already present
+    const utcTimestamp = timestamp.endsWith('Z') ? timestamp : timestamp + 'Z';
+    const date = new Date(utcTimestamp);
     const today = new Date();
     const isToday = date.toDateString() === today.toDateString();
     
@@ -355,7 +357,7 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
              date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
   };
-
+  
   const handleGuessSubmit = (e) => {
     e.preventDefault();
     if (!guessText.trim()) return;
