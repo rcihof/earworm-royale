@@ -59,7 +59,9 @@ router.get('/', async (req, res) => {
         creator.display_name as creator_name,
         guesser.display_name as guesser_name,
         (SELECT COUNT(*) FROM guesses WHERE game_id = g.id) as guess_count,
-        (SELECT COUNT(*) FROM hints WHERE game_id = g.id) as hint_count
+        (SELECT COUNT(*) FROM hints WHERE game_id = g.id) as hint_count,
+        (SELECT COUNT(*) FROM guesses WHERE game_id = g.id AND status = 'pending') as pending_guess_count,
+        (SELECT COUNT(*) FROM hints WHERE game_id = g.id AND status = 'pending') as pending_hint_count
       FROM games g
       LEFT JOIN users creator ON g.creator_id = creator.id
       LEFT JOIN users guesser ON g.guesser_id = guesser.id
