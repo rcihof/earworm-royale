@@ -314,6 +314,9 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
   const [hintText, setHintText] = useState('');
 
   const isCreator = game.creator_id === user.id;
+  const hasPendingGuess = game.guesses?.some(g => g.status === 'pending');
+  const hasPendingHint = game.hints?.some(h => h.status === 'pending');
+  const hasPending = hasPendingGuess || hasPendingHint;
 
   const handleGuessSubmit = (e) => {
     e.preventDefault();
@@ -397,6 +400,17 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
             <div className="space-y-4">
               {!isCreator && (
                 <>
+                  {hasPendingGuess && (
+                    <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg">
+                      ⏳ Waiting for response to your guess...
+                    </div>
+                  )}
+                  {hasPendingHint && (
+                    <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg">
+                      ⏳ Waiting for hint response...
+                    </div>
+                  )}
+
                   <form onSubmit={handleGuessSubmit}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Make a Guess
@@ -407,11 +421,13 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
                         value={guessText}
                         onChange={(e) => setGuessText(e.target.value)}
                         placeholder="Enter song title..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        disabled={hasPending}
+                        className={`flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${hasPending ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       />
                       <button
                         type="submit"
-                        className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700"
+                        disabled={hasPending}
+                        className={`px-6 py-2 rounded-lg font-semibold ${hasPending ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
                       >
                         Guess
                       </button>
@@ -428,11 +444,13 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
                         value={hintText}
                         onChange={(e) => setHintText(e.target.value)}
                         placeholder="Ask for a hint..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                        disabled={hasPending}
+                        className={`flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${hasPending ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       />
                       <button
                         type="submit"
-                        className="bg-yellow-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-yellow-600"
+                        disabled={hasPending}
+                        className={`px-6 py-2 rounded-lg font-semibold ${hasPending ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
                       >
                         Hint
                       </button>
