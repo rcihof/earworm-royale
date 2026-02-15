@@ -62,10 +62,13 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS hints (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_id INTEGER NOT NULL,
-    hint_text TEXT,
+    hint_request TEXT,
+    hint_response TEXT,
     prize_before REAL NOT NULL,
     prize_after REAL NOT NULL,
+    status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    responded_at DATETIME,
     FOREIGN KEY (game_id) REFERENCES games(id)
   );
 `);
