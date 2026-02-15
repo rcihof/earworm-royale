@@ -7,9 +7,8 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticateToken);
 
-// Create a new game
 // Create new game
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { songTitle, artist, opponentEmail } = req.body;
     const creatorId = req.user.id;
@@ -50,7 +49,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Get all games for user (as creator or guesser)
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -75,13 +74,12 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get a specific game with all guesses and hints
-router.get('/:id', (req, res) => {
+// Get game details
+router.get('/:id', async (req, res) => {
   try {
     const gameId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
-    // Get game details
     const game = db.prepare(`
       SELECT 
         g.*,
@@ -97,7 +95,7 @@ router.get('/:id', (req, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
 
-    // Check if user is involved in this game
+    // Check if user is authorized (creator or guesser)
     if (game.creator_id !== userId && game.guesser_id !== userId) {
       return res.status(403).json({ error: 'Not authorized to view this game' });
     }
@@ -130,10 +128,10 @@ router.get('/:id', (req, res) => {
 });
 
 // Make a guess
-router.post('/:id/guess', (req, res) => {
+router.post('/:id/guess', async (req, res) => {
   try {
     const gameId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const { guessText } = req.body;
 
     if (!guessText) {
@@ -150,9 +148,9 @@ router.post('/:id/guess', (req, res) => {
       return res.status(400).json({ error: 'Game is not active' });
     }
 
-    // Set guesser_id if this is the first guess
-    if (!game.guesser_id) {
-      db.prepare('UPDATE games SET guesser_id = ? WHERE id = ?').run(userId, gameId);
+    // Only guesser can make guesses
+    if (game.guesser_id !== userId) {
+      return res.status(403).json({ error: 'Only the assigned guesser can make guesses' });
     }
 
     // Calculate new prize (halve it)
@@ -178,9 +176,10 @@ router.post('/:id/guess', (req, res) => {
 });
 
 // Request a hint (immediately halves prize)
-router.post('/:id/hint', (req, res) => {
+router.post('/:id/hint', async (req, res) => {
   try {
     const gameId = req.params.id;
+    const userId = req.user.id;
     const { hintText } = req.body;
 
     const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
@@ -191,6 +190,11 @@ router.post('/:id/hint', (req, res) => {
 
     if (game.status !== 'active') {
       return res.status(400).json({ error: 'Game is not active' });
+    }
+
+    // Only guesser can request hints
+    if (game.guesser_id !== userId) {
+      return res.status(403).json({ error: 'Only the assigned guesser can request hints' });
     }
 
     // Calculate new prize (halve it)
@@ -216,10 +220,10 @@ router.post('/:id/hint', (req, res) => {
 });
 
 // Mark game as solved
-router.post('/:id/solve', (req, res) => {
+router.post('/:id/solve', async (req, res) => {
   try {
     const gameId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
 
@@ -259,10 +263,10 @@ router.post('/:id/solve', (req, res) => {
 });
 
 // Update game notes
-router.patch('/:id/notes', (req, res) => {
+router.patch('/:id/notes', async (req, res) => {
   try {
     const gameId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const { notes } = req.body;
 
     const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
