@@ -403,6 +403,36 @@ router.patch('/:id/notes', async (req, res) => {
     console.error('Update notes error:', error);
     res.status(500).json({ error: 'Failed to update notes' });
   }
+  // Delete game (creator only)
+router.delete('/:id', async (req, res) => {
+  try {
+    const gameId = req.params.id;
+    const userId = req.user.id;
+
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
+
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Only creator can delete
+    if (game.creator_id !== userId) {
+      return res.status(403).json({ error: 'Only the creator can delete this game' });
+    }
+
+    // Delete associated guesses and hints first (foreign key constraints)
+    db.prepare('DELETE FROM guesses WHERE game_id = ?').run(gameId);
+    db.prepare('DELETE FROM hints WHERE game_id = ?').run(gameId);
+    
+    // Delete the game
+    db.prepare('DELETE FROM games WHERE id = ?').run(gameId);
+
+    res.json({ message: 'Game deleted successfully' });
+  } catch (error) {
+    console.error('Delete game error:', error);
+    res.status(500).json({ error: 'Failed to delete game' });
+  }
+});
 });
 
 export default router;

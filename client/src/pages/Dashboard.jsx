@@ -368,6 +368,37 @@ function GameModal({ game, user, onClose, onGuess, onHint, onSolve }) {
     }
   };
 
+<div className="mb-6">
+            <div className="text-3xl font-bold text-green-600 mb-2">
+              €{game.current_prize.toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-600">
+              Started at €{game.starting_prize.toFixed(2)}
+            </div>
+            {/* Delete button for creator */}
+            {isCreator && (
+              <button
+                onClick={async () => {
+                  if (!confirm('Delete this game? This cannot be undone.')) return;
+                  try {
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/games/${game.id}`, {
+                      method: 'DELETE',
+                      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to delete');
+                    onClose();
+                    window.location.reload();
+                  } catch (err) {
+                    alert('Failed to delete game: ' + err.message);
+                  }
+                }}
+                className="mt-3 text-sm text-red-600 hover:text-red-700 underline"
+              >
+                🗑️ Delete this game
+              </button>
+            )}
+          </div>
+
   const handleGuessSubmit = (e) => {
     e.preventDefault();
     if (!guessText.trim()) return;
