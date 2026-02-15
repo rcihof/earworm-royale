@@ -51,7 +51,10 @@ db.exec(`
     guess_text TEXT NOT NULL,
     prize_before REAL NOT NULL,
     prize_after REAL NOT NULL,
+    status TEXT DEFAULT 'pending',
+    feedback TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    responded_at DATETIME,
     FOREIGN KEY (game_id) REFERENCES games(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
